@@ -1,7 +1,6 @@
 ---
 title: Functional Programming
 date: 2019-09-15
-comments: true
 ---
 # Functioal Programming Languages
 

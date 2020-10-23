@@ -1,7 +1,6 @@
 ---
 title: C++20 overview - ranges
 date: 2020-10-23
-comments: true
 ---
 
 # C++20 overview - ranges
