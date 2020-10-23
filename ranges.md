@@ -1,8 +1,3 @@
----
-title: C++20 overview - ranges
-date: 2020-10-23
----
-
 # C++20 overview - ranges
 Ranges are an extension of the Standard Template Library that makes its iterators and algorithms more powerful by making them composable. Ranges is the future of STL, or namely STL 2.0. 
 

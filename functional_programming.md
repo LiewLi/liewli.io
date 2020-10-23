@@ -1,7 +1,3 @@
----
-title: Functional Programming
-date: 2019-09-15
----
 # Functioal Programming Languages
 
 * Haskell
