@@ -1,6 +1,6 @@
 # SQLite ORM
 
-How can we build a elegant ORM wrapper for sqlite database? 
+How can we build an elegant ORM wrapper for sqlite database? 
 
 ORM involves designing an easy-to-use model mapping system, LINQ system and much more. Let's take a look at [sqlite_orm](https://github.com/fnc12/sqlite_orm), trying to investigate it's whole architecture and implementation details, see how it brings us the answer to the question. This article assume you have a basic knowledge of SQLite and modern c++ (C++14 features is heavily used in sqlite_orm).
 
