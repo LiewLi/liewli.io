@@ -4,7 +4,7 @@
 
 I haven't been using Qt framework for a long time. Back to my college days, I used Qt for a while, trying to build desktop apps and polish my C++ skills. Qt went through a lot of changes in recent years, we now have Qt 6. Nowadays, Qt supports building apps with Widgets or QML, one for traditional desktop applications, the other mainly targeted for touch screen devices, which allows developers and designers alike to create highly performant, fluidly animated and visually appealing applications. QML combines usage of JavaScript and JSON-like DSL to build ui in declarative manner, yeah, ***Any application that can be written in JavaScript, will eventually be written in JavaScript***.
 
-From my perspectives, QML was invented to attract more front-end developers, while Widgets for traditional desktop app developers. This article mainly focuses on Qt widgets technology, which has also changed a lot so far, being an iOS/MacOS developer, I wanna test it out, trying to compare it with Cocoa, just for fun :-). As we all known, the best way to get started with a GUI framework is to build a ***TODO List*** app. The final app I built with Qt widgets:
+From my perspectives, QML was invented to attract more front-end developers, while Widgets for traditional desktop app developers. This article mainly focuses on Qt widgets technology, which has also changed a lot so far, being an iOS/MacOS developer, I wanna test it out, try to compare it with Cocoa, just for fun :-). As we all known, the best way to get started with a GUI framework is to build a ***TODO List*** app. The final app I built with Qt widgets:
 
 <img src="./todox.png" width="375">
 
