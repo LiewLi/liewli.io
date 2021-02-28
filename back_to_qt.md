@@ -282,6 +282,7 @@ m_view->setItemDelegate(m_delegate);
 ## Insights
 
 Qt Widget’s model/view/delegate architecture resembles a lot like MVC pattern in Cocoa, while QListView corresponds to UITableView in UIKit. Although there are some differences, but the idea is generally the same, only differs in how to separate components' responsibilities.
+
 Worth to mention, Qt also supports building iOS applications with ***QML***, which will be covered in the next coming article. I will also reimplement the above ***TODO List*** app with ***QML*** and do a thorough comparison between ***Widgets*** and ***QML***.
 
 ***Preview of QML***
