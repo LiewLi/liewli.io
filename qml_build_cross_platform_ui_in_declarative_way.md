@@ -226,7 +226,7 @@ signals:
  ```
 
 ## Widgets vs QML
-* Widget use C++ only, but QML uses it's own DSL and supports JavaScript, we can even integrate legacy C++ code into QML runtime without too much effort
+* Widget uses C++ only, but QML uses it's own DSL and supports JavaScript, we can even integrate legacy C++ code into QML runtime without too much effort
 * QML provides a new way for splitting concerns by QML component, we can encapsulate reusable component with QML, and combine them into final app, just like what we did in React's component.
 * QML has better support for touch devices and enables fluid animation. Widget is targeted for heavy desktop applications, while QML for touch devices and lightweight usage cases.
-* QML support building cross-platform apps for mobile platforms, iOS, Android etc.
+* QML supports building cross-platform apps for mobile platforms, iOS, Android etc.
