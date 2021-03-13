@@ -3,7 +3,7 @@
 
 ## Background
 
-In last article, I have shown how we can build cross platform GUI application with Qt widgets using model/view pattern. Actually we can also build GUI apps with QML,  QML combines usage of JavaScript and JSON-like DSL to build ui in declarative manner. In this article, I will build a ***TODO List*** app with QML and trying to do a comparison between ***Widgets*** and ***QML***. The final app I built with QML:
+In last article, I have shown how we can build cross platform GUI application with Qt widgets using model/view pattern. Actually we can also build GUI apps with QML,  QML combines usage of JavaScript and JSON-like DSL to build ui in declarative manner. In this article, I will build a ***TODO List*** app with QML and try to do a comparison between ***Widgets*** and ***QML***. The final app I built with QML:
 
 <img src="./qml.jpg" width="375">
 
