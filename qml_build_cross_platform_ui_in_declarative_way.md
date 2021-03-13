@@ -83,7 +83,7 @@ Window
 ```
 
 ### QML Component
-Take ***TodoCell*** component as an example, component can have custom defined property, which can later can be set by super component
+Take ***TodoCell*** component as an example, component can have custom defined property, which can later be set by parent component
 ```js
 Rectangle {
 
@@ -113,7 +113,8 @@ Rectangle {
 ```
 
 ***TodoToolBar.qml***
-QML components can also have signal for event handling, we can attach event handle to it.
+
+QML components can also have signals for event handling, we can attach event handle to them.
 ```js
 Item {
     id: root
@@ -157,9 +158,11 @@ Item {
 }
 
 ```
- The cool part of QML is that we can share our C++ code, integrating C++ code into QML is quite simple without too much effort, the model part is actually the same as we used in Qt Widget. The final result is that we can built UI with QML in declarative manner and reuse our legacy C++ code for biz logic, integrating QML into legacy Qt Widget project is painless, we can even replace our old widget page with QML page in progressive manner. Building UI in QML is much natural and efficient compared to Qt Widget.
- ```cpp
+ The cool part of QML is that we can reuse our legacy C++ code, integrating C++ code into QML is quite effortless, the ***model***(Model/View pattern) part is actually the same as we used in Qt Widget. The final result is that we can build UI with QML in declarative manner and reuse our legacy C++ code for heavy biz logic, integrating QML into legacy Qt Widget project is painless, we can even replace our old widget with QML component in progressive manner. Building UI in QML is much natural and efficient compared to Qt Widget.
 
+***Model***
+
+ ```cpp
 struct TodoItem: public QObject
 {
     Q_OBJECT
@@ -223,7 +226,7 @@ signals:
  ```
 
 ## Widgets vs QML
-* Widget use C++ only, but QML using it's own DSL and support JavaScript, we even can integrate legacy C++ code into QML runtime without too much effort
-* QML provides a modern way for splitting concerns by QML component, we can encapsulate reusable component with QML, and combine them into final app.
-* QML have better support for touch device and fluid animation. Widget is targeted for heavy desktop applications, while QML for touch devices.
-* QML support building cross-platform apps for mobile platforms (iOS, Android).
+* Widget use C++ only, but QML uses it's own DSL and supports JavaScript, we can even integrate legacy C++ code into QML runtime without too much effort
+* QML provides a new way for splitting concerns by QML component, we can encapsulate reusable component with QML, and combine them into final app, just like what we did in React's component.
+* QML has better support for touch devices and enables fluid animation. Widget is targeted for heavy desktop applications, while QML for touch devices and lightweight usage cases.
+* QML support building cross-platform apps for mobile platforms, iOS, Android etc.
