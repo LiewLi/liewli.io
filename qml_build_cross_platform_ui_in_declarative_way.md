@@ -1,5 +1,5 @@
 
-# QML - Built cross platform UI in declarative way
+# QML - Build cross platform UI in declarative way
 
 ## Background
 
