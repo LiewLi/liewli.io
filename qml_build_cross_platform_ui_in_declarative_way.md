@@ -8,7 +8,7 @@ In last article, I have shown how we can build cross platform GUI application wi
 <img src="./qml.jpg" width="375">
 
 ## Design and Implementation
-We built our QML components by combining sub components, every components can have their own layout, style, properties and internal state, I posit that the idea is generally the same with React's component. Each component can be described with one QML file, we combine them to make the final app. The main QML component looks like this:
+We build our QML app by combining components, every component can have their own layout, style, properties and internal state, I posit that the idea is generally the same with React's component. Each component can be described with one QML file, we combine them to make the final app. The main QML component looks like this:
 
 ```js
 import QtQuick 2.12
