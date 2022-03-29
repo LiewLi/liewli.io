@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>md</title>
+    <link rel="stylesheet"
+      href="./static/default.min.css">
+<script src="./static/highlight.min.js"></script>
+</head>
+<body>
+    <h1>SQLite ORM</h1>
+<p>How can we build a elegant ORM wrapper for sqlite database? </p>
+<p>ORM involves designing an easy-to-use model mapping system, LINQ system and much more. Let's take a look at <a href="https://github.com/fnc12/sqlite_orm">sqlite_orm</a>, trying to investigate it's whole architecture and implementation details, see how it brings us the answer to the question. This article assume you have a basic knowledge of SQLite and modern c++ (C++14 features is heavily used in sqlite_orm).</p>
+<h2>API design</h2>
+<h3>Model Mapping</h3>
+<p>Data model definition and it's corresponding mapping</p>
+<pre><code class="language-cpp">struct Employee {
+    int id;
+    std::string name;
+    int age;
+    std::unique_ptr&lt;std::string&gt; address;  //  optional
+    std::unique_ptr&lt;double&gt; salary;  //  optional
+};
+</code></pre>
+<pre><code class="language-cpp">auto storage = make_storage(&quot;select.sqlite&quot;,
+                                make_table(&quot;COMPANY&quot;,
+                                           make_column(&quot;ID&quot;, &amp;Employee::id, primary_key()),
+                                           make_column(&quot;NAME&quot;, &amp;Employee::name),
+                                           make_column(&quot;AGE&quot;, &amp;Employee::age),
+                                           make_column(&quot;ADDRESS&quot;, &amp;Employee::address),
+                                           make_column(&quot;SALARY&quot;, &amp;Employee::salary)));
+</code></pre>
+<h3>CRUD</h3>
+<p>Let's mock some data</p>
+<pre><code class="language-cpp">//  create employees..
+Employee paul{-1, &quot;Paul&quot;, 32, std::make_unique&lt;std::string&gt;(&quot;California&quot;), std::make_unique&lt;double&gt;(20000.0)};
+Employee allen{-1, &quot;Allen&quot;, 25, std::make_unique&lt;std::string&gt;(&quot;Texas&quot;), std::make_unique&lt;double&gt;(15000.0)};
+Employee teddy{-1, &quot;Teddy&quot;, 23, std::make_unique&lt;std::string&gt;(&quot;Norway&quot;), std::make_unique&lt;double&gt;(20000.0)};
+Employee mark{-1, &quot;Mark&quot;, 25, std::make_unique&lt;std::string&gt;(&quot;Rich-Mond&quot;), std::make_unique&lt;double&gt;(65000.0)};
+Employee david{-1, &quot;David&quot;, 27, std::make_unique&lt;std::string&gt;(&quot;Texas&quot;), std::make_unique&lt;double&gt;(85000.0)};
+Employee kim{-1, &quot;Kim&quot;, 22, std::make_unique&lt;std::string&gt;(&quot;South-Hall&quot;), std::make_unique&lt;double&gt;(45000.0)};
+Employee james{-1, &quot;James&quot;, 24, std::make_unique&lt;std::string&gt;(&quot;Houston&quot;), std::make_unique&lt;double&gt;(10000.0)};
+</code></pre>
+<p>Add</p>
+<pre><code class="language-cpp">Employee paul{-1, &quot;Paul&quot;, 32, std::make_unique&lt;std::string&gt;(&quot;California&quot;), std::make_unique&lt;double&gt;(20000.0)};
+paul.id = storage.insert(paul);
+</code></pre>
+<p>Delete</p>
+<pre><code class="language-cpp">storage.remove&lt;Employee&gt;(paul.id);
+</code></pre>
+<p>Update</p>
+<pre><code class="language-cpp">allen.age = 30;
+storage.update&lt;Employee&gt;(allen);
+</code></pre>
+<p>Select</p>
+<pre><code class="language-cpp">//e == allen
+auto e = storage.get&lt;Employee&gt;(allen.id);
+</code></pre>
+<h2>Implementation</h2>
+<p>Let's dive into <code>storage.remove&lt;Employee&gt;(paul.id)</code> implementation detail, how it is translated into corresponding SQL query and gets executed. Actually it is processed by the following pipeline:</p>
+<pre><code>remove_t statement -&gt; serialization -&gt; prepared statement -&gt; statement binding -&gt; execute
+</code></pre>
+<ol>
+<li>create remove_t statement to capture all params, remove_t is defined as:</li>
+</ol>
+<pre><code class="language-cpp">template&lt;class T, class... Ids&gt;
+struct remove_t {
+   using type = T;
+   using ids_type = std::tuple&lt;Ids...&gt;;
+
+   ids_type ids;
+};
+</code></pre>
+<ul>
+<li><em>T</em> is the table model type <em>Employee</em>, <em>ids</em> is the primary key </li>
+</ul>
+<ol start="2">
+<li>statement serialization, the serialization process is pretty straightforward</li>
+</ol>
+<pre><code class="language-cpp">template&lt;class T, class... Ids&gt;
+struct statement_serializator&lt;remove_t&lt;T, Ids...&gt;, void&gt; {
+   using statement_type = remove_t&lt;T, Ids...&gt;;
+
+   template&lt;class C&gt;
+   std::string operator()(const statement_type &amp;, const C &amp;context) const {
+       auto &amp;tImpl = context.impl.template get_impl&lt;T&gt;();
+       std::stringstream ss;
+       ss &lt;&lt; &quot;DELETE FROM '&quot; &lt;&lt; tImpl.table.name &lt;&lt; &quot;' &quot;;
+       ss &lt;&lt; &quot;WHERE &quot;;
+       auto primaryKeyColumnNames = tImpl.table.primary_key_column_names();
+       for(size_t i = 0; i &lt; primaryKeyColumnNames.size(); ++i) {
+           ss &lt;&lt; &quot;\&quot;&quot; &lt;&lt; primaryKeyColumnNames[i] &lt;&lt; &quot;\&quot;&quot;
+              &lt;&lt; &quot; = ? &quot;;
+           if(i &lt; primaryKeyColumnNames.size() - 1) {
+               ss &lt;&lt; &quot;AND &quot;;
+           }
+       }
+       return ss.str();
+   }
+};
+</code></pre>
+<ol start="3">
+<li>created sqlite prepared statement, calling <code>sqlite3_prepare_v2</code> to make the prepared statement</li>
+</ol>
+<pre><code class="language-cpp">template&lt;class T, class... Ids&gt;
+prepared_statement_t&lt;remove_t&lt;T, Ids...&gt;&gt; prepare(remove_t&lt;T, Ids...&gt; rem) {
+    auto con = this-&gt;get_connection();
+    sqlite3_stmt *stmt;
+    auto db = con.get();
+    using context_t = serializator_context&lt;impl_type&gt;;
+    context_t context{this-&gt;impl};
+    context.skip_table_name = false;
+    context.replace_bindable_with_question = true;
+    auto query = serialize(rem, context);
+    if(sqlite3_prepare_v2(db, query.c_str(), -1, &amp;stmt, nullptr) == SQLITE_OK) {
+        return {std::move(rem), stmt, con};
+    } else {
+        throw std::system_error(std::error_code(sqlite3_errcode(db), get_sqlite_error_category()),
+                                sqlite3_errmsg(db));
+    }
+}
+</code></pre>
+<ol start="4">
+<li>statement binding and execution</li>
+</ol>
+<pre><code class="language-cpp">template&lt;class T, class... Ids&gt;
+void execute(const prepared_statement_t&lt;remove_t&lt;T, Ids...&gt;&gt; &amp;statement) {
+    auto con = this-&gt;get_connection();
+    auto db = con.get();
+    auto stmt = statement.stmt;
+    auto index = 1;
+    sqlite3_reset(stmt);
+    iterate_ast(statement.t.ids, [stmt, &amp;index, db](auto &amp;v) {
+        using field_type = typename std::decay&lt;decltype(v)&gt;::type;
+        if(SQLITE_OK != statement_binder&lt;field_type&gt;().bind(stmt, index++, v)) {
+            throw std::system_error(std::error_code(sqlite3_errcode(db), get_sqlite_error_category()),
+                                    sqlite3_errmsg(db));
+        }
+    });
+    if(sqlite3_step(stmt) == SQLITE_DONE) {
+        //  done..
+    } else {
+        throw std::system_error(std::error_code(sqlite3_errcode(db), get_sqlite_error_category()),
+                                sqlite3_errmsg(db));
+    }
+}
+</code></pre>
+<p>In this case <code>field_type</code> is <em>int</em>, statement_binder do the actual binding as</p>
+<pre><code class="language-cpp"> template&lt;class V&gt;
+ struct statement_binder&lt;V, std::enable_if_t&lt;std::is_arithmetic&lt;V&gt;::value&gt;&gt; {
+     int bind(sqlite3_stmt *stmt, int index, const V &amp;value) {
+         return bind(stmt, index, value, tag());
+     }
+
+   private:
+     using tag = arithmetic_tag_t&lt;V&gt;;
+
+     int bind(sqlite3_stmt *stmt, int index, const V &amp;value, const int_or_smaller_tag &amp;) {
+         return sqlite3_bind_int(stmt, index, static_cast&lt;int&gt;(value));
+     }
+
+     int bind(sqlite3_stmt *stmt, int index, const V &amp;value, const bigint_tag &amp;) {
+         return sqlite3_bind_int64(stmt, index, static_cast&lt;sqlite3_int64&gt;(value));
+     }
+
+     int bind(sqlite3_stmt *stmt, int index, const V &amp;value, const real_tag &amp;) {
+         return sqlite3_bind_double(stmt, index, static_cast&lt;double&gt;(value));
+     }
+ };
+</code></pre>
+<p>We have done a through investigation on how LINQ is implemented in sqlite_orm. Finally, let's trying to figure out how model mapping works, the answer lies in
+the function call <code>make_storage</code> and <code>make_table</code> and <code>make_column</code>.</p>
+<h3>make_column</h3>
+<pre><code class="language-cpp"> template&lt;class O,
+          class T,
+          typename = typename std::enable_if&lt;!std::is_member_function_pointer&lt;T O::*&gt;::value&gt;::type,
+          class... Op&gt;
+ internal::column_t&lt;O, T, const T &amp;(O::*)() const, void (O::*)(T), Op...&gt;
+ make_column(const std::string &amp;name, T O::*m, Op... constraints) {
+     static_assert(constraints::template constraints_size&lt;Op...&gt;::value == std::tuple_size&lt;std::tuple&lt;Op...&gt;&gt;::value,
+                   &quot;Incorrect constraints pack&quot;);
+     static_assert(internal::is_field_member_pointer&lt;T O::*&gt;::value,
+                   &quot;second argument expected as a member field pointer, not member function pointer&quot;);
+     return {name, m, nullptr, nullptr, std::make_tuple(constraints...)};
+ }
+</code></pre>
+<p>column_t is defined as:</p>
+<pre><code class="language-cpp">template&lt;class O, class T, class G /* = const T&amp; (O::*)() const*/, class S /* = void (O::*)(T)*/, class... Op&gt;
+struct column_t : column_base {
+   using object_type = O;
+   using field_type = T;
+   using constraints_type = std::tuple&lt;Op...&gt;;
+   using member_pointer_t = field_type object_type::*;
+   using getter_type = G;
+   using setter_type = S;
+
+   /**
+    *  Member pointer used to read/write member
+    */
+   member_pointer_t member_pointer /* = nullptr*/;
+
+   /**
+    *  Getter member function pointer to get a value. If member_pointer is null than
+    *  `getter` and `setter` must be not null
+    */
+   getter_type getter /* = nullptr*/;
+
+   /**
+    *  Setter member function
+    */
+   setter_type setter /* = nullptr*/;
+
+   /**
+    *  Constraints tuple
+    */
+    constraints_type constraints;
+
+    //...
+};
+</code></pre>
+<h3>make_table</h3>
+<p><code>table_t</code> is pretty simple, it's just a tuple of <code>column_t</code> and a table name</p>
+<pre><code class="language-cpp">struct table_base {
+
+   /**
+    *  Table name.
+    */
+   std::string name;
+
+   bool _without_rowid = false;
+};
+
+/**
+*  Table interface class. Implementation is hidden in `table_impl` class.
+*/
+template&lt;class T, class... Cs&gt;
+struct table_t : table_base {
+   using object_type = T;
+   using columns_type = std::tuple&lt;Cs...&gt;;
+
+   static constexpr const int columns_count = static_cast&lt;int&gt;(std::tuple_size&lt;columns_type&gt;::value);
+
+   columns_type columns;
+   //...
+};
+</code></pre>
+<h3>make_storage</h3>
+<p><code>storage_t</code> plays a key role in sqlite_orm, it is composed of multiple tables and capable of managing connection to the underlying db, provide the facade to whole library etc. We don't take a deeper look for now, since we have grasped the basics of it's capabilities.</p>
+<h2>Insights</h2>
+<ol>
+<li>Model mapping and LINQ are two key parts in a ORM library</li>
+<li>With LINQ, we provide easy-to-use interface to our library user, yet we don't lose it's flexibility, we can build complex SQL queries and validate SQL query statement at the compile time.</li>
+<li>Modern C++ can be really expressive , we can write fluent code and build complex systems. </li>
+</ol>
+<script>hljs.highlightAll();</script>
+</body>
+</html>
