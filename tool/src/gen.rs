@@ -73,9 +73,10 @@ fn gen_index(mds: Vec<String>, dst: &Path) -> Result<()> {
     handlebars.register_template_string("index", include_str!("./template/index.hbs"))?;
     let mut data: HashMap<&str, String> = HashMap::new();
     mds.sort();
-    let list = mds.iter().map(|md| {
-        format!("<li><a href=\"./html/{md}/{md}.html\">{md}</a></li>")
-    }).collect();
+    let list = mds
+        .iter()
+        .map(|md| format!("<li><a href=\"./html/{md}/{md}.html\">{md}</a></li>"))
+        .collect();
     data.insert("entries", list);
     let html = handlebars.render("index", &data)?;
     fs::write(dst, html)?;
@@ -99,7 +100,7 @@ pub fn gen(url: &str) -> Result<()> {
 
     let md_entries: Vec<DirEntry> = mds.filter_map(|p| p.ok()).collect();
 
-    let md_html_names:Vec<String> = (&md_entries)
+    let md_html_names: Vec<String> = (&md_entries)
         .into_iter()
         .map(|f| f.file_name())
         .filter_map(|f| f.into_string().ok())
