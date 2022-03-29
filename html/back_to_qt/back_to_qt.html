@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>liewli.io</title>
+    <link rel="stylesheet"
+      href="../static/default.min.css">
+<script src="../static/highlight.min.js"></script>
+</head>
+<body>
+    <h1>Back to Qt - Model/View/Delegate</h1>
+<h2>Overview</h2>
+<p>I haven't been using Qt framework for a long time. Back to my college days, I used Qt for a while, trying to build desktop apps and polish my C++ skills. Qt went through a lot of changes in recent years, we now have Qt 6. Nowadays, Qt supports building apps with Widgets or QML, one for traditional desktop applications, the other mainly targeted for touch screen devices, which allows developers and designers alike to create highly performant, fluidly animated and visually appealing applications. QML combines usage of JavaScript and JSON-like DSL to build ui in declarative manner, yeah, <em><strong>Any application that can be written in JavaScript, will eventually be written in JavaScript</strong></em>.</p>
+<p>From my perspectives, QML was invented to attract more front-end developers, while Widgets for traditional desktop app developers. This article mainly focuses on Qt widgets technology, which has also changed a lot so far, being an iOS/MacOS developer, I wanna test it out, try to compare it with Cocoa, just for fun :-). As we all know, the best way to get started with a GUI framework is to build a <em><strong>TODO List</strong></em> app. The final app I built with Qt widgets:</p>
+<img src="./todox.png" width="375">
+<h2>Model/View/Delegate</h2>
+<p><img src="./modelview-overview.png" alt="Model/View/Delegate" /></p>
+<p>Qt widget recommends using model/view/delegate architecture to build complex applications, just another MVC kinda pattern.
+&gt;The model communicates with a source of data, providing an interface for the other components in the architecture. The nature of the communication depends on the type of data source, and the way the model is implemented. The view obtains model indexes from the model; these are references to items of data. By supplying model indexes to the model, the view can retrieve items of data from the data source. In standard views, a delegate renders the item of data. When an item is edited, the delegate communicates with the model directly using model indexes.</p>
+<p>The architecture is separated into three groups: model, view, delegate. Each of these components is defined by abstract class that provides common interface and default implementation. Abstract classes are meant to be subclassed in order to provide the full set of functionality expected by other components. Model, view and delegates communicate with each other using Qt’s built-in <a href="https://doc.qt.io/qt-6/signalsandslots.html">signals and slots</a> mechanism.</p>
+<h2>TODO List App</h2>
+<p>Let's dive into model/view/delegates architecture with our todo list app implementation. The app is composed of some widgets, thinking widgets as UIView in UIKit.</p>
+<p><em><strong>View Hierarchy</strong></em></p>
+<pre><code>QMainWindow
+  - QFrame
+    - QVBoxLayout
+        - QFrame
+            - QListView
+        - QToolBar
+            - QPushButton('Add')
+            - QPushButton('Delete)
+            - QPushButton('Toggle')
+</code></pre>
+<h3>Model</h3>
+<p>First of all, we need to define our model, the model inherits from <em><strong>QAbstractListModel</strong></em>, which is needed by our <em><strong>QListView</strong></em> widget.</p>
+<pre><code class="language-cpp">#ifndef TODOMODEL_H
+#define TODOMODEL_H
+
+#include &lt;QObject&gt;
+#include &lt;QList&gt;
+#include &lt;QAbstractListModel&gt;
+#include &lt;QVariant&gt;
+
+struct TodoItem
+{
+ public:
+    QString title;
+    enum Status {
+        normal = 0,
+        wip = 1,
+        completed = 2,
+    } ;
+
+    Status status;
+};
+Q_DECLARE_METATYPE(TodoItem);
+
+class TodoModel : public QAbstractListModel
+{
+    Q_OBJECT
+public:
+    explicit TodoModel(QObject *parent = nullptr);
+    QList&lt;TodoItem&gt; *todos;
+
+    int rowCount(const QModelIndex&amp; parent = QModelIndex()) const override;
+
+    QVariant data(const QModelIndex &amp;index, int role) const override;
+
+    bool setData(const QModelIndex &amp;index, const QVariant &amp;value, int role = Qt::EditRole) override;
+
+    void appendTodo(const TodoItem &amp;obj);
+    void deleteTodo(const QModelIndex &amp;index);
+    void toggleTodo(const QModelIndex &amp;index);
+
+    Qt::ItemFlags flags(const QModelIndex &amp;index) const override;
+
+signals:
+
+};
+
+#endif // TODOMODEL_H
+</code></pre>
+<p>As we shown, we defined basic todo struct and operations, <em><strong>add</strong></em>, <em><strong>delete</strong></em> and <em><strong>toggle</strong></em>. We need to override following methods:</p>
+<pre><code class="language-cpp">int TodoModel::rowCount(const QModelIndex &amp;parent) const
+{
+    return todos-&gt;count();
+}
+
+
+QVariant TodoModel::data(const QModelIndex &amp;index, int role) const
+{
+    if (!index.isValid())
+        return QVariant();
+
+       QVariant var;
+       var.setValue(todos-&gt;at(index.row()));
+       return var;
+}
+
+bool TodoModel::setData(const QModelIndex &amp;index, const QVariant &amp;value, int role)
+{
+    if (!index.isValid() || role != Qt::EditRole) return false;
+    TodoItem &amp;obj = (*todos)[index.row()];
+    obj = value.value&lt;TodoItem&gt;();
+    emit dataChanged(index, index);
+    return true;
+}
+</code></pre>
+<ul>
+<li><em>rowCount</em>: number of rows in listview</li>
+<li><em>data</em>: specific data for corresponding index</li>
+<li><em>setData</em>: method to update model and trigger <em>dataChanged</em> event</li>
+</ul>
+<p>Then we need to connect our QPushButton’s events to corresponding operations. e.g</p>
+<pre><code class="language-cpp">m_addBtn = new QPushButton();
+m_addBtn-&gt;setText(&quot;Add&quot;);
+m_addBtn-&gt;setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+toolBar-&gt;addWidget(m_addBtn);
+
+QObject::connect(m_addBtn, &amp;QPushButton::clicked, this, &amp;MainWindow::appendItem);
+</code></pre>
+<pre><code class="language-cpp">
+void MainWindow::appendItem()
+{
+    qDebug() &lt;&lt; &quot;append item&quot;;
+
+    bool ok;
+    QString txt = QInputDialog::getText(this, &quot;Add Todo&quot;, &quot;New Todo:&quot;, QLineEdit::Normal, &quot;&quot;, &amp;ok);
+
+    if (ok &amp;&amp; !txt.isEmpty()) {
+        TodoItem obj;
+        obj.title = txt;
+        obj.status = TodoItem::normal;
+        m_model-&gt;appendTodo(obj);
+    }
+}
+</code></pre>
+<h3>Delegate</h3>
+<p>Delegate controls rendering and editing of the model. Much like what we did in UIKit, we provide a custom UITableViewCell for UITableView, however the rendering is controlled by the cell itself.</p>
+<pre><code class="language-cpp">#ifndef TODOITEMDELEGATE_H
+#define TODOITEMDELEGATE_H
+
+#include &lt;QStyledItemDelegate&gt;
+#include &lt;QObject&gt;&gt;
+
+class TodoItemDelegate : public QStyledItemDelegate
+{
+    Q_OBJECT
+public:
+    TodoItemDelegate(QObject *parent = nullptr);
+
+    QWidget* createEditor(QWidget *parent, const QStyleOptionViewItem &amp;option, const QModelIndex &amp;index) const override;
+
+    void setModelData(QWidget *editor, QAbstractItemModel *model, const QModelIndex &amp;index) const override;
+
+    void setEditorData(QWidget *editor, const QModelIndex &amp;index) const override;
+
+    QSize sizeHint(const QStyleOptionViewItem &amp;option, const QModelIndex &amp;index) const override;
+
+    void paint(QPainter *painter, const QStyleOptionViewItem &amp;option, const QModelIndex &amp;index) const override;
+
+    void updateEditorGeometry(QWidget *editor, const QStyleOptionViewItem &amp;option, const QModelIndex &amp;index) const override;
+};
+
+#endif // TODOITEMDELEGATE_H
+
+</code></pre>
+<pre><code class="language-cpp">#include &quot;todoitemdelegate.h&quot;
+#include &quot;todomodel.h&quot;
+
+#include &lt;QPainter&gt;
+#include &lt;QtWidgets/QTextEdit&gt;
+#include &lt;QtWidgets/QStyle&gt;
+#include &lt;QColor&gt;
+#include &lt;QFont&gt;
+#include &lt;QString&gt;
+
+TodoItemDelegate::TodoItemDelegate(QObject *parent): QStyledItemDelegate(parent)
+{
+
+}
+
+
+QWidget* TodoItemDelegate::createEditor(QWidget *parent, const QStyleOptionViewItem &amp;option, const QModelIndex &amp;index) const
+{
+    QTextEdit *edit = new QTextEdit(parent);
+    edit-&gt;setAlignment(Qt::AlignCenter);
+    return edit;
+}
+
+void TodoItemDelegate::setEditorData(QWidget *editor, const QModelIndex &amp;index) const
+{
+    QTextEdit *edit = static_cast&lt;QTextEdit *&gt;(editor);
+    const TodoModel *todoModel = static_cast&lt;const TodoModel *&gt;(index.model());
+    QVariant obj = todoModel-&gt;data(index, Qt::EditRole);
+    edit-&gt;setText(obj.value&lt;TodoItem&gt;().title);
+}
+
+void TodoItemDelegate::setModelData(QWidget *editor, QAbstractItemModel *model, const QModelIndex &amp;index) const
+{
+    QTextEdit *edit = static_cast&lt;QTextEdit *&gt;(editor);
+    const TodoModel *todoModel = static_cast&lt;const TodoModel *&gt;(index.model());
+    QVariant var =  todoModel-&gt;data(index, Qt::EditRole);
+    var.value&lt;TodoItem&gt;().title = edit-&gt;toPlainText();
+    model-&gt;setData(index, var);
+}
+
+QSize TodoItemDelegate::sizeHint(const QStyleOptionViewItem &amp;option, const QModelIndex &amp;index) const
+{
+    return QSize(option.rect.size().width(), 80);
+}
+
+void TodoItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &amp;option, const QModelIndex &amp;index) const
+{
+    painter-&gt;save();
+    QRect rect = option.rect;
+    const TodoModel *todoModel = static_cast&lt;const TodoModel *&gt;(index.model());
+
+    QVariant obj = todoModel-&gt;data(index, Qt::DisplayRole);
+    const TodoItem &amp;item = obj.value&lt;TodoItem&gt;();
+    if (option.state.testFlag(QStyle::StateFlag::State_Selected)) {
+      QBrush brush(QColorConstants::DarkCyan);
+      painter-&gt;fillRect(rect, brush);
+    } else {
+        painter-&gt;fillRect(rect, option.backgroundBrush);
+    }
+    QFont f;
+    f.setStyleHint(QFont::Monospace);
+    f.setPixelSize(30);
+
+    f.setStrikeOut(item.status == TodoItem::completed);
+    f.setItalic(item.status == TodoItem::completed);
+    painter-&gt;setFont(f);
+
+    painter-&gt;setPen(item.status == TodoItem::completed ?  QColorConstants::Gray : QColorConstants::White);
+
+     QString str =  QString(&quot;%1&quot;).arg(item.title);
+
+    painter-&gt;drawText(QPoint(rect.left() + 10, rect.top() + rect.height() / 2 + 30 / 2) ,  str);
+    painter-&gt;restore();
+}
+
+void TodoItemDelegate::updateEditorGeometry(QWidget *editor, const QStyleOptionViewItem &amp;option, const QModelIndex &amp;index) const
+{
+    editor-&gt;setGeometry(option.rect);
+}
+
+</code></pre>
+<p>TodoItemDelegate creates the needed editor widget (QTextEdit) for editing listview row data, and renders model into screen using <em>paint</em> method. Meanwhile, the delegate also decides the geometry size for our cell inside listview, looks like UITableViewDelegate. After the editor widget finishes committing it's changes, delegate updates the model's data immediately.</p>
+<p>We can customize editing and rendering behaviors of QListView by providing our own Delegate implementation.</p>
+<h3>View</h3>
+<p>Not surprisingly, we inject our model and delegate into <em><strong>QListView</strong></em>’s properties.</p>
+<pre><code class="language-cpp">m_model = new TodoModel();
+m_delegate = new TodoItemDelegate(this);
+m_view-&gt;setModel(m_model);
+m_view-&gt;setItemDelegate(m_delegate);
+</code></pre>
+<p><em><strong>Model</strong></em> behaves like a <em><strong>UITableViewDataSource</strong></em> and <em><strong>Delegate</strong></em> like a <em><strong>UITableViewDelegate</strong></em>, but with some differences, delegate also controls the editing and rendering of our custom cell. In real usage cases, model should also encapsulate business logic,  providing common interface to manipulate biz data, while delegate acts like a mediator to render model into screen and synchronizes data back into model after handling events from user.</p>
+<h2>Insights</h2>
+<p>Qt Widget’s model/view/delegate architecture resembles a lot like MVC pattern in Cocoa, while QListView corresponds to UITableView in UIKit. Although there are some differences, but the idea is generally the same, only differs in how to separate components' responsibilities.</p>
+<p>Worth to mention, Qt also supports building iOS applications with <em><strong>QML</strong></em>, which will be covered in the next coming article. I will also reimplement the above <em><strong>TODO List</strong></em> app with <em><strong>QML</strong></em> and do a thorough comparison between <em><strong>Widgets</strong></em> and <em><strong>QML</strong></em>.</p>
+<p><em><strong>Preview of QML</strong></em></p>
+<pre><code class="language-JavaScript">import QtQuick 2.3
+
+            Rectangle {
+            width: 200
+            height: 100
+            color: &quot;#090F2A&quot;
+
+            Text {
+            anchors.centerIn: parent
+            text: &quot;Hello, World!&quot;
+            color: &quot;#fff&quot;
+            }
+            }
+</code></pre>
+<h2>Source Code</h2>
+<p>You can find the complete source code in <a href="https://github.com/LiewLi/TodoMVC">TodoMVC</a></p>
+
+    <script>hljs.highlightAll();</script>
+</body>
+</html>

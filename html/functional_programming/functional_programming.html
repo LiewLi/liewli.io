@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>liewli.io</title>
+    <link rel="stylesheet"
+      href="../static/default.min.css">
+<script src="../static/highlight.min.js"></script>
+</head>
+<body>
+    <h1>Functioal Programming Languages</h1>
+<ul>
+<li>Haskell</li>
+<li>SML</li>
+<li>OCaml</li>
+<li>Scheme</li>
+<li>Clojure</li>
+<li>F#</li>
+<li>Scala</li>
+<li>Erlang</li>
+<li>...</li>
+</ul>
+<h1>Functions vs Procedures</h1>
+<ul>
+<li>Function == expression, Procedure == statement</li>
+<li>Function关注的是computation而Procedure关注的是instruction</li>
+<li>Function 是一种映射，Domain--&gt;Range</li>
+</ul>
+<h1>Functional Programming (OCaml)</h1>
+<hr />
+<ul>
+<li>1996年由 Xavier Leroy在 INRIA，France开发</li>
+<li>ML Family</li>
+<li>支持，Functional，Imperative，和OOP范式</li>
+<li>F#, ReasonML, BuckleScript, Flow</li>
+<li>Facebook, Jane Street, Bloomberg</li>
+</ul>
+<hr />
+<p><em>Sample Code</em></p>
+<pre><code class="language-OCaml">(* Hello World *)
+print_string &quot;hello world&quot;
+</code></pre>
+<pre><code class="language-OCaml">(* Binary tree with leaves car­rying an integer. *)
+type tree = Leaf of int | Node of tree * tree
+
+let rec exists_leaf test tree =
+  match tree with
+  | Leaf v -&gt; test v
+  | Node (left, right) -&gt;
+      exists_leaf test left
+      || exists_leaf test right
+
+let has_even_leaf tree =
+  exists_leaf (fun n -&gt; n mod 2 = 0) tree
+</code></pre>
+<hr />
+<p><em>Type Inference</em></p>
+<pre><code class="language-OCaml">let add x y = x + y;;
+(* val add : int -&gt; int -&gt; int = &lt;fun&gt; *)
+</code></pre>
+<hr />
+<p><em>Recursion</em></p>
+<pre><code class="language-OCaml">let rec sum n = if (n = 0) then 0 else n + sum(n-1) ;;
+</code></pre>
+<p><em>Tail Recursion</em></p>
+<pre><code class="language-OCaml">let rec sum n acc = if (n = 0) then acc else sum (n-1) (acc + n);;
+</code></pre>
+<hr />
+<p><em>High Order Function</em></p>
+<pre><code class="language-OCaml">let compose f g  = fun x -&gt; f (g x) ;;
+let double = fun x -&gt; 2 * x;;
+let square = fun x -&gt; x * x ;;
+let f = compose square double ;;
+let a = f 3;;
+(* val a : int = 36 *)
+</code></pre>
+<hr />
+<p><em>Currying</em></p>
+<p>In mathematics and computer science, currying is the technique of translating the evaluation of a function that takes multiple arguments (or a tuple of arguments) into evaluating a sequence of functions, each with a single argument. </p>
+<pre><code class="language-OCaml">let add x y = x + y ;;
+(* val add : int -&gt; int -&gt; int = &lt;fun&gt; *)
+let f = add 2;;
+(* val f : int -&gt; int = &lt;fun&gt; *)
+let a = f 3;;
+(* val a : int = 5 *)
+</code></pre>
+<hr />
+<p><em>Algebraic Data Type &amp; Pattern Matching</em></p>
+<pre><code class="language-OCaml">type tree = Leaf of int | Node of tree * tree
+</code></pre>
+<pre><code class="language-OCaml">type shape = Circle of float | Square of float | Rectangle of (float * float);;
+
+let area s = match s with
+| Circle r -&gt; 3.14 *. r *. r
+| Square x -&gt; x *. x
+| Rectangle (x, y) -&gt; x *. y;;
+(* val area : shape -&gt; float = &lt;fun&gt; *)
+
+let a = area (Circle 1.0);;
+(* val a : float = 3.14 *)
+let b = area (Square 2.0);;
+(* val b : float = 4. *)
+let c = area (Rectangle (3.0, 4.0));;
+(* val c : float = 12. *)
+</code></pre>
+<hr />
+<p><em>Immutability</em></p>
+<pre><code class="language-OCaml">let a = [1; 2; 3];;
+let b = [4; 5; 6];;
+let c = a @ b ;;
+(* val c : int list = [1; 2; 3; 4; 5; 6] *)
+a;;
+(* int list = [1; 2; 3] *)
+</code></pre>
+<hr />
+<p><em>Strict Evaluation (Lazy Evaluation)</em></p>
+<pre><code class="language-OCaml">let f1 () = print_string &quot;f1\n&quot;; 1 ;;
+let f2 () = print_string &quot;f2\n&quot;; 2 ;;
+let _if cond _then _else = if cond then _then else _else ;;
+let a = _if true (f1()) (f2()) ;;
+(*f2
+*f1
+*val a : int = 1
+*)
+</code></pre>
+<hr />
+<p><em>Pure Function</em></p>
+<ul>
+<li>none-pure function : malloc ,random</li>
+<li>pure function: let add x y = x + y;</li>
+<li>函数输出值由输入值唯一确定并且没有side effects</li>
+</ul>
+
+    <script>hljs.highlightAll();</script>
+</body>
+</html>

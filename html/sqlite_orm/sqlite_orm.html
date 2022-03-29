@@ -4,14 +4,14 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>md</title>
+    <title>liewli.io</title>
     <link rel="stylesheet"
-      href="./static/default.min.css">
-<script src="./static/highlight.min.js"></script>
+      href="../static/default.min.css">
+<script src="../static/highlight.min.js"></script>
 </head>
 <body>
     <h1>SQLite ORM</h1>
-<p>How can we build a elegant ORM wrapper for sqlite database? </p>
+<p>How can we build an elegant ORM wrapper for sqlite database? </p>
 <p>ORM involves designing an easy-to-use model mapping system, LINQ system and much more. Let's take a look at <a href="https://github.com/fnc12/sqlite_orm">sqlite_orm</a>, trying to investigate it's whole architecture and implementation details, see how it brings us the answer to the question. This article assume you have a basic knowledge of SQLite and modern c++ (C++14 features is heavily used in sqlite_orm).</p>
 <h2>API design</h2>
 <h3>Model Mapping</h3>
@@ -254,6 +254,7 @@ struct table_t : table_base {
 <li>With LINQ, we provide easy-to-use interface to our library user, yet we don't lose it's flexibility, we can build complex SQL queries and validate SQL query statement at the compile time.</li>
 <li>Modern C++ can be really expressive , we can write fluent code and build complex systems. </li>
 </ol>
-<script>hljs.highlightAll();</script>
+
+    <script>hljs.highlightAll();</script>
 </body>
 </html>
