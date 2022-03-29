@@ -68,9 +68,11 @@ fn conv_to_html(src: &DirEntry, dst: &Path) -> Result<()> {
 }
 
 fn gen_index(mds: Vec<String>, dst: &Path) -> Result<()> {
+    let mut mds = mds;
     let mut handlebars = Handlebars::new();
     handlebars.register_template_string("index", include_str!("./template/index.hbs"))?;
     let mut data: HashMap<&str, String> = HashMap::new();
+    mds.sort();
     let list = mds.iter().map(|md| {
         format!("<li><a href=\"./html/{md}/{md}.html\">{md}</a></li>")
     }).collect();
