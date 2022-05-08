@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>liewli.io</title>
+    <link rel="stylesheet"
+      href="../static/default.min.css">
+<script src="../static/highlight.min.js"></script>
+</head>
+<body>
+    <h1>SwiftUI</h1>
+<h2>Background</h2>
+<p>SwiftUI is a declarative UI framework from Apple, introduced at WWDC 2019, that enables developers to build native user interfaces for apps running on either iOS, iPadOS, watchOS, tvOS or macOS. Its highly declarative API makes it quite different from Apple’s previous UI frameworks, such as UIKit and AppKit, which in turn often requires us to adopt a somewhat different set of patterns and conventions when starting to use it.</p>
+<h2>Hello World</h2>
+<pre><code class="language-swift">struct TutorialView: View {
+    @State var counter: Int = 0
+    
+    var body: some View {
+        Text(&quot;\(counter)&quot;)
+            .foregroundColor(.white)
+            .font(.title)
+        
+        Button(action: {
+            self.counter += 1
+        }) {
+            Text(&quot;Add one&quot;)
+                .font(.body)
+                .foregroundColor(.white)
+                .padding()
+                .border(Color.primary, width: 1)
+        }
+    }
+}
+</code></pre>
+<img src="./tutorial.gif" alt="tutorial" style="zoom:50%;" />
+<h2>View</h2>
+<p>SwiftUI views needs to conform to <strong>View</strong> protocol, which defined as </p>
+<pre><code class="language-swift">public protocol View {
+    associatedtype Body : View
+    @ViewBuilder var body: Self.Body { get }
+}
+</code></pre>
+<p>SwiftUI has a lot built-in views, they can be divided into two categories, <strong>Simple View</strong> and <strong>Container View</strong>, they are all <strong>View</strong>s in nature, but serve for different funcationalities, <strong>Simple View</strong> for visual content rendering whiles <strong>Container View</strong> for layout purpose. </p>
+<p>Before you start building custom views, it's a good idea to get used to the things SwiftUI already provides you with. We will cover some of the built-in SwiftUI views, sadly not exhaustive.</p>
+<h3>Simple View</h3>
+<ul>
+<li>
+<p><em><strong>Color</strong></em> </p>
+<p><code>Color</code> is a view that simply displays a rectangle in the color that you’ve provided. It can also be applied to other views as a foreground or background color through modifiers.</p>
+<pre><code class="language-swift">extension Color {
+    static let primary = Color(red: 1.0, green: 0.231, blue: 0.361)
+}
+
+struct ColorView: View {
+    var body: some View {
+        Color.primary
+    }
+}
+</code></pre>
+<p><code>Color</code>is similar to <code>UIColor</code>, but it implements <strong>View</strong> Protocol, which can be treated as a SwiftUI view</p>
+<pre><code class="language-swift">extension Color : View {
+    public typealias Body = Never
+}
+</code></pre>
+</li>
+<li>
+<p><em><strong>Button</strong></em></p>
+<p><code>UIButton</code></p>
+</li>
+<li>
+<p><em><strong>Text</strong></em></p>
+<p><code>UILabel</code></p>
+</li>
+<li>
+<p><strong>Toggle</strong></p>
+<p><code>UISwitch</code></p>
+</li>
+<li>
+<p><strong>Slider</strong></p>
+<p><code>UISlider</code></p>
+</li>
+<li>
+<p>.....</p>
+</li>
+</ul>
+<h3>Container View</h3>
+<h4>Stack Views</h4>
+<ul>
+<li>
+<p><code>HStack</code> </p>
+<p>A view that arranges its children in a horizontal line.</p>
+</li>
+<li>
+<p><code>VStack</code></p>
+<p>A view that arranges its children in a vertical line</p>
+</li>
+<li>
+<p><code>ZStack</code></p>
+<p>A view that overlays its children, aligning them in both axes.</p>
+<img src="./stacks.png" alt="Building-Layouts-with-Stack-Views-1_dark@2x" style="zoom:50%;" />
+</li>
+</ul>
+<p><code>LazyHStack</code> <code>LazyVStack</code> <code>LazyZStack</code></p>
+<p>The stack is “lazy,” in that the stack view doesn’t create items until it needs to render them onscreen.</p>
+<h4>List</h4>
+<p>A container that presents rows of data arranged in a single column, optionally providing the ability to select one or more members.</p>
+<pre><code class="language-swift">struct Ocean: Identifiable, Hashable {
+    let name: String
+    let id = UUID()
+}
+
+private var oceans = [
+    Ocean(name: &quot;Pacific&quot;),
+    Ocean(name: &quot;Atlantic&quot;),
+    Ocean(name: &quot;Indian&quot;),
+    Ocean(name: &quot;Southern&quot;),
+    Ocean(name: &quot;Arctic&quot;)
+]
+
+@State private var multiSelection = Set&lt;UUID&gt;()
+
+var body: some View {
+    NavigationView {
+        List(oceans, selection: $multiSelection) {
+            Text($0.name)
+        }
+        .navigationTitle(&quot;Oceans&quot;)
+        .toolbar { EditButton() }
+    }
+    Text(&quot;\(multiSelection.count) selections&quot;)
+}
+</code></pre>
+<h4>Grid</h4>
+<p>To lay out views horizontally and vertically at the same time, use a <a href="https://developer.apple.com/documentation/swiftui/lazyvgrid"><code>LazyVGrid</code></a> or <a href="https://developer.apple.com/documentation/swiftui/lazyhgrid"><code>LazyHGrid</code></a>. Grids are a good container choice to lay out content that naturally displays in square containers, like an image gallery.</p>
+<img src="./grid@2x.png" alt="Picking-Container-Views-for-Your-Content-3_dark@2x" style="zoom:50%;" />
+<h2>Layout System</h2>
+<p>There are three steps in SwiftUI layout process.</p>
+<ol>
+<li>
+<p><strong>Parent Proposes Size for Child</strong></p>
+<p>First, the root view offers the text a proposed size – in this case, the entire safe area of the screen, represented by an orange rectangle.</p>
+</li>
+<li>
+<p><strong>Child chooses its Size</strong></p>
+<p>Text only requires that much size to draw its content. The parent has to respect the child's choice. It doesn't stretch or compress the child.</p>
+</li>
+<li>
+<p><strong>Parent places Child in Parent's Coordinate Space</strong></p>
+<p>And now the root view has to put the child somewhere, so it puts in right in the middle.</p>
+<img src="./layout.png" alt="case-01-layout" style="zoom: 25%;" />
+</li>
+</ol>
+<h2>State and DataFlow</h2>
+<p>SwiftUI offers a declarative approach to user interface design. As you compose a hierarchy of views, you also indicate data dependencies for the views. When the data changes, either due to an external event or because of an action taken by the user, SwiftUI automatically updates the affected parts of the interface. As a result, the framework automatically performs most of the work traditionally done by view controllers.</p>
+<img src="./State-and-Data-Flow.png" alt="State-and-Data-Flow-1@2x" style="zoom:50%;" />
+<p>The framework provides tools, like state variables and bindings, for connecting your app’s data to the user interface. These tools help you maintain a single source of truth for every piece of data in your app, in part by reducing the amount of glue logic you write.</p>
+<img src="./SwiftUI-property-wrappers.png" alt="Chris-Eidhofs-decision-tree-for-SwiftUI-property-wrappers" style="zoom:50%;" />
+<p><strong>@State @Binding @StateObject @ObservedObject @EnvironmentObject</strong> are all property wrappers provided by SwiftUI to manage data flow.</p>
+<p>So what is a property wrapper?</p>
+<p>Well, Like the name implies, a property wrapper is essentially a type that <em>wraps</em> a given value in order to attach additional logic to it — and can be implemented using either a struct or a class by annotating it with the <code>@propertyWrapper</code> attribute. Besides that, the only real requirement is that each property wrapper type should contain a stored property called <code>wrappedValue</code>, which tells Swift which underlying value that’s being wrapped. For example</p>
+<pre><code class="language-swift">@propertyWrapper struct Capitalized {
+    var wrappedValue: String {
+        didSet { wrappedValue = wrappedValue.capitalized }
+    }
+
+    init(wrappedValue: String) {
+        self.wrappedValue = wrappedValue.capitalized
+    }
+}
+</code></pre>
+<p>We just defined a property wrapper , <code>@Captalized</code> , that  automatically capitalizes all String values assigned to it.</p>
+<pre><code class="language-swift">struct User {
+	@Capitalized var firstName: String
+	@Capitalized var lastName: String
+}
+
+var user = User(firstName: &quot;tim&quot; lastName: &quot;cook&quot;)
+print(user.firstName) // &quot;Tim&quot;
+</code></pre>
+<p>What's the difference between <strong>@State @Binding @StateObject @ObservedObject @EnvironmentObject</strong> ?</p>
+<p>Well, each serves for a differenent usage case, to summarize</p>
+<ul>
+<li>Manage transient UI state locally within a view by wrapping value types as <a href="https://developer.apple.com/documentation/swiftui/state"><code>State</code></a> properties.</li>
+<li>Connect to external reference model data that conforms to the <a href="https://developer.apple.com/documentation/Combine/ObservableObject"><code>ObservableObject</code></a> protocol using the <a href="https://developer.apple.com/documentation/swiftui/observedobject"><code>ObservedObject</code></a> property wrapper. Gain access to an observable object stored in the environment using the <a href="https://developer.apple.com/documentation/swiftui/environmentobject"><code>EnvironmentObject</code></a> property wrapper. Instantiate an observable object directly in a view using a <a href="https://developer.apple.com/documentation/swiftui/stateobject"><code>StateObject</code></a>.</li>
+<li>Share a reference to a source of truth — like state or an observable object — using the <a href="https://developer.apple.com/documentation/swiftui/binding"><code>Binding</code></a> property wrapper.</li>
+</ul>
+<p>Well cover them in the following codelab section</p>
+<h2>Animation</h2>
+<p>SwiftUI support two kinds of animations, <strong>implicit animation</strong> and <strong>explicit animation</strong>. </p>
+<ul>
+<li>Implicit Animation</li>
+</ul>
+<p>You can attach animations to a specific view with <code>animation(_:)</code>modifier. It will apply the given animation to all animatable values within this view.</p>
+<ul>
+<li>Explicit Animation</li>
+</ul>
+<p>Many views might rely on the same state. Instead of apply animations to individual views, you can also apply animations to all views by add animations in places you change your state's value. By wrapping the change of state in <code>withAnimation</code> function, all views that depend on that state would be animated.</p>
+<p>You can still use <code>.animation</code> functions in views, and it will take precedence over <code>withAnimation</code></p>
+<pre><code class="language-swift">struct TutorialView:  View {
+    @State var progress: Float = 0
+    let timer = LoadingTimer(interval: 1.0)
+    
+    var body: some View {
+        ProgressView(progress: progress)
+            .onReceive(timer.publisher) { _ in
+                //explicit animation
+                withAnimation(.easeInOut) {
+                    progress += 0.1
+                    progress = min(1.0, progress)
+                }
+            }
+            .animation(.spring()) //implicit animation
+            .onAppear {
+                timer.start()
+            }
+            .onDisappear {
+                timer.cancel()
+            }
+    }
+}
+</code></pre>
+<img src="./progress_animation.gif" alt="progress_animation" style="zoom:50%;" />
+<p>Animation is one of the powerful features of SwiftUI. So easy that we could animate changes in view hierarchy by simply mutating <em>@State</em> properties and attaching animation modifiers. SwiftUI also supports more advanced animations like <strong>Hero animation</strong></p>
+<pre><code class="language-swift">struct HeroAnimationView: View {
+    
+    @State private var allImages = [
+        &quot;heart.fill&quot;,
+        &quot;bandage.fill&quot;,
+        &quot;cross.fill&quot;,
+        &quot;bed.double.fill&quot;,
+        &quot;cross.case.fill&quot;,
+        &quot;pills.fill&quot;
+    ]
+    
+    @State private var selectedImages: [String] = []
+     
+    var body: some View {
+        VStack {
+            Text(&quot;All Images&quot;)
+                .font(.headline)
+            
+            allImageView
+            
+            Spacer()
+            
+            Text(&quot;Selected Images&quot;)
+            
+            selectedImageView
+        }
+    }
+}
+</code></pre>
+<pre><code class="language-swift">private extension HeroAnimationView {
+    var allImageView: some View {
+        LazyVGrid(columns: [.init(.adaptive(minimum: 44))]) {
+            ForEach(allImages, id:\.self) {image in
+                Image(systemName: image)
+                    .resizable()
+                    .frame(width: 44, height: 44)
+                    .onTapGesture {
+                        withAnimation {
+                            allImages.removeAll { $0 == image}
+                            selectedImages.append(image)
+                        }
+                    }
+            }
+        }
+    }   
+}
+</code></pre>
+<p>By default, SwiftUI uses fade-in and fade-out transitions to animate layout changes. So the animation goes with</p>
+<img src="./hero_animation_plain.gif" alt="hero_animation_plain" style="zoom:50%;" />
+<p>With <code>matchedGeometryEffect</code> modifier we can achieve more fluid transition,  by attaching <em>matchedGeometryEffect</em> to multiple views, we define a connection between them. SwiftUI can use this connection to understand the geometry of transition and automatically apply shape, position, and size transformation between these changes.</p>
+<pre><code class="language-swift">struct HeroAnimationView: View {
+	//...
+   	//define namespace    
+    @State private var selectedImages: [String] = []
+  //...
+}
+</code></pre>
+<pre><code class="language-swift">var allImageView: some View {
+        LazyVGrid(columns: [.init(.adaptive(minimum: 44))]) {
+            ForEach(allImages, id:\.self) {image in
+                Image(systemName: image)
+                    .resizable()
+                    .matchedGeometryEffect(id: image, in: imageEffect) //mark unique identifier
+                    .frame(width: 44, height: 44)
+                    .onTapGesture {
+                        withAnimation {
+                            allImages.removeAll { $0 == image}
+                            selectedImages.append(image)
+                        }
+                    }
+            }
+        }
+    }
+</code></pre>
+<img src="./hero_animation.gif" alt="hero_animation" style="zoom:50%;" />
+<h2>View Modifers</h2>
+<p>SwiftUI gives us a range of built-in modifiers, such as <code>font()</code>, <code>background()</code>, and <code>clipShape()</code>. However, it’s also possible to create custom modifiers that do something specific.</p>
+<p>To create a custom modifier, create a new struct that conforms to the <code>ViewModifier</code> protocol. This has only one requirement, which is a method called <code>body</code> that accepts whatever content it’s being given to work with, and must return <code>some View</code>.</p>
+<pre><code class="language-swift">public protocol ViewModifier {
+
+    /// The type of view representing the body.
+    associatedtype Body : View
+
+    /// Gets the current body of the caller.
+    ///
+    /// `content` is a proxy for the view that will have the modifier
+    /// represented by `Self` applied to it.
+    @ViewBuilder func body(content: Self.Content) -&gt; Self.Body
+
+    /// The content view type passed to `body()`.
+    typealias Content
+}
+</code></pre>
+<p>For example, we can build a watermark modifier as follows</p>
+<pre><code class="language-swift">struct Watermark: ViewModifier {
+    var text: String
+    
+    func body(content: Content) -&gt; some View {
+        ZStack(alignment: .bottomTrailing) {
+            content
+            Text(text)
+                .font(.caption)
+                .foregroundColor(.white)
+                .padding(5)
+                .background(Color.black)
+        }
+    }
+}
+
+extension View {
+    func watermark(with text: String) -&gt; some View {
+        modifier(Watermark(text: text))
+    }
+}
+</code></pre>
+<pre><code class="language-swift">struct TutorialView:  View {    
+    var body: some View {
+        Color.primary
+            .frame(width: 300, height: 300)
+            .watermark(with: &quot;SwiftUI❤️&quot;)
+    }
+}
+</code></pre>
+<img src="./watermark.png" alt="watermark" style="zoom: 25%;" />
+<h2>MVVM with Combine</h2>
+<h3>Combine</h3>
+<p>In Apple’s words, Combine is:</p>
+<blockquote>
+<p>a declarative Swift API for processing values over time.</p>
+</blockquote>
+<p>Combine is Apple’s take on a functional reactive programming library, akin to <a href="https://github.com/ReactiveX/RxSwift">RxSwift</a>. RxSwift itself is a port of <a href="http://reactivex.io/">ReactiveX</a>. Combine uses many of the same functional reactive concepts that can be found in other languages and libraries, applying the staticly typed nature of Swift to their solution.</p>
+<p><img src="./pipeline.svg" alt="pipeline" /></p>
+<ul>
+<li>
+<p><strong>Publisher</strong> </p>
+<p>A publisher provides data when available and upon request. A publisher that has not had any subscription requests will not provide any data. When you are describing a Combine publisher, you describe it with two associated types: one for Output and one for Failure.</p>
+</li>
+<li>
+<p><strong>Subscriber</strong></p>
+<p>A subscriber is responsible for requesting data and accepting the data (and possible failures) provided by a publisher. A subscriber is described with two associated types, one for Input and one for Failure. The subscriber initiates the request for data, and controls the amount of data it receives. It can be thought of as &quot;driving the action&quot; within Combine, as without a subscriber, the other components stay idle.</p>
+</li>
+<li>
+<p><strong>Operator</strong></p>
+<p>Operators can be used to transform either values or types - both the Output and Failure type.</p>
+</li>
+</ul>
+<h3>MVVM</h3>
+<img src="./mvvm-combine.png" alt="mvvm-combine" style="zoom: 25%;" />
+<h2>Interoperability with UIKit</h2>
+<p>One of SwiftUI’s major strengths is just how well it integrates with both UIKit. Not only does that act as a useful “escape hatch” for whenever a given use case is not yet natively supported by SwiftUI itself, it also enables us to incrementally migrate an existing UIKit or AppKit-based project to Apple’s new UI framework, all while reusing many of our core UI components. Which means we can refactor exisiting large projects in a progressive manner.</p>
+<h3>Using UIKit in SwiftUI</h3>
+<p>For example, we can wrap a <strong>UIButton</strong> to be used in SwiftUI without too much effort</p>
+<pre><code class="language-swift">struct UIKitView: View {
+    @State var count: Int = 0
+    
+    var body: some View {
+        VStack {
+            Text(&quot;\(count)&quot;)
+            UIButtonView {
+                count += 1
+            }.frame(width: 100, height: 80)
+        }
+    }
+}
+
+struct UIButtonView: UIViewRepresentable {
+    var handler: () -&gt; Void
+    func makeUIView(context: Context) -&gt; some UIView {
+        let button = UIButton()
+        button.setTitle(&quot;Add one!&quot;, for: .normal)
+        button.addTarget(context.coordinator,
+                         action: #selector(Coordinator.callHandler),
+                         for: .touchUpInside)
+        return button
+    }
+    
+    func makeCoordinator() -&gt; Coordinator {
+        Coordinator()
+    }
+    
+    func updateUIView(_ uiView: UIViewType, context: Context) {
+        context.coordinator.handler = handler
+    }
+}
+
+extension UIButtonView {
+    class Coordinator {
+        var handler: (() -&gt; Void)?
+        
+        @objc func callHandler() {
+            handler?()
+        }
+    }
+}
+</code></pre>
+<img src="./uikit.png" alt="uikit" style="zoom:25%;" />
+<h3>Embed SwiftUI in UIKit</h3>
+<p>SwiftUI’s interoperability with UIKit goes the complete opposite direction as well, since we’re also able to embed SwiftUI views within UIKit-based view controllers using <strong>UIHostingController</strong>.UIHostingController is a UIKit view controller that manages a SwiftUI view hierarchy.</p>
+<p>Create a <code>UIHostingController</code> object when you want to integrate SwiftUI views into a UIKit view hierarchy. At creation time, specify the SwiftUI view you want to use as the root view for this view controller; you can change that view later using the <a href="https://developer.apple.com/documentation/swiftui/uihostingcontroller/rootview"><code>rootView</code></a> property. Use the hosting controller like you would any other view controller, by presenting it or embedding it as a child view controller in your interface.</p>
+<pre><code class="language-swift">private func makeSwiftUIVC() -&gt; UIHostingController&lt;SwiftUIView&gt; {
+  let swiftuiView = SwiftUIView(vm: viewModel)
+  let vc = UIHostingController(rootView: swiftuiView)
+  vc.view.translatesAutoresizingMaskIntoConstraints = false
+  return vc
+}
+</code></pre>
+<h2>CodeLab</h2>
+<h2>Reference</h2>
+<ul>
+<li>https://developer.apple.com/documentation/swiftui</li>
+<li>https://heckj.github.io/swiftui-notes</li>
+</ul>
+
+    <script>hljs.highlightAll();</script>
+</body>
+</html>
